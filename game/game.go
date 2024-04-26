@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 
 	"github.com/willybeans/bumble_bash/assets"
 )
@@ -15,20 +16,23 @@ const (
 	screenWidth  = 800
 	screenHeight = 600
 
-	flowerSpawnTime = 1 * time.Second
+	flowerSpawnTime  = 1 * time.Second
+	dropletSpawnTime = 2 * time.Second
 
 	baseFlowerVelocity  = 0.25
 	flowerSpeedUpAmount = 0.1
 	flowerSpeedUpTime   = 5 * time.Second
 )
 
-var fallSpeed = 1.0
+var isHit = false
 
 type Game struct {
-	player           *Player
-	flowerSpawnTimer *Timer
-	flowers          []*Flower
-	droplets         []*Droplet
+	player            *Player
+	flowerSpawnTimer  *Timer
+	dropletSpawnTimer *Timer
+
+	flowers  []*Flower
+	droplets []*Droplet
 
 	score int
 
@@ -38,13 +42,13 @@ type Game struct {
 
 func NewGame() *Game {
 	g := &Game{
-		flowerSpawnTimer: NewTimer(flowerSpawnTime),
-		baseVelocity:     baseFlowerVelocity,
-		velocityTimer:    NewTimer(flowerSpeedUpTime),
+		dropletSpawnTimer: NewTimer(dropletSpawnTime),
+		flowerSpawnTimer:  NewTimer(flowerSpawnTime),
+		baseVelocity:      baseFlowerVelocity,
+		velocityTimer:     NewTimer(flowerSpeedUpTime),
 	}
 
 	g.player = NewPlayer(g)
-	// g.flowers = [NewFlower(0.25)]
 
 	return g
 }
@@ -65,10 +69,14 @@ func (g *Game) Update() error {
 
 		f := NewFlower(g.baseVelocity)
 		g.flowers = append(g.flowers, f)
+	}
+
+	g.dropletSpawnTimer.Update()
+	if g.dropletSpawnTimer.IsReady() {
+		g.dropletSpawnTimer.Reset()
 
 		d := NewDroplet(g.baseVelocity)
 		g.droplets = append(g.droplets, d)
-
 	}
 
 	for _, f := range g.flowers {
@@ -89,7 +97,13 @@ func (g *Game) Update() error {
 	for i, d := range g.droplets {
 		if d.Collider().Intersects(g.player.Collider()) {
 			g.droplets = append(g.droplets[:i], g.droplets[i+1:]...)
-			//make random number
+			fmt.Println(g.player.position)
+			g.player.isHit = true
+
+			if g.score > 0 {
+				fmt.Println(g.player.position.X, g.player.position.Y, g.score)
+				// g.player.sprite.WritePixels(assets.DropletBrokenSprite)
+			}
 			g.score--
 		}
 	}
@@ -142,16 +156,16 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// 	)
 	// }
 
-	// vector.StrokeRect(
-	// 	screen,
-	// 	float32(g.player.position.X),
-	// 	float32(g.player.position.Y),
-	// 	float32(g.player.sprite.Bounds().Dx()),
-	// 	float32(g.player.sprite.Bounds().Dy()),
-	// 	1.0,
-	// 	color.White,
-	// 	false,
-	// )
+	vector.StrokeRect(
+		screen,
+		float32(g.player.position.X),
+		float32(g.player.position.Y),
+		float32(g.player.sprite.Bounds().Dx()),
+		float32(g.player.sprite.Bounds().Dy()),
+		1.0,
+		color.White,
+		false,
+	)
 
 }
 

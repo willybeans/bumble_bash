@@ -15,7 +15,10 @@ import (
 var assets embed.FS
 
 var PlayerSprite = mustLoadImage("Bee.png")
+var PlayerHitSprite = mustLoadImage("Bee_Hit.png")
+
 var FlowerSprite = mustLoadImage("Red_Daisy.png")
+
 var DropletSprite = mustLoadImage("raindroplet.png")
 var DropletBrokenSprite = mustLoadImage("droplet_broken.png")
 
