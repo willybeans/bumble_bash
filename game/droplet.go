@@ -9,13 +9,8 @@ import (
 	"github.com/willybeans/bumble_bash/assets"
 )
 
-// const (
-// 	rotationSpeedMin = -0.02
-// 	rotationSpeedMax = 0.02
-// )
-
 const (
-// hitCooldown = time.Millisecond * 500
+	baseDropVelocity = 5
 )
 
 type Droplet struct {
@@ -26,17 +21,7 @@ type Droplet struct {
 	sprite        *ebiten.Image
 }
 
-func NewDroplet(baseVelocity float64) *Droplet {
-	// sprite := assets.DropletSprite
-	// bounds := sprite.Bounds()
-	// halfW := float64(bounds.Dx()) / 2
-	// halfH := float64(bounds.Dy()) / 2
-
-	// target := Vector{
-	// 	X: screenWidth * .75,
-	// 	Y: screenHeight * .75,
-	// }
-
+func NewDroplet(spawnPos Vector, rot float64) *Droplet {
 	target := Vector{
 		X: screenWidth / 2,
 		Y: screenHeight / 2,
@@ -50,7 +35,7 @@ func NewDroplet(baseVelocity float64) *Droplet {
 		Y: target.Y + math.Sin(angle)*radius,
 	}
 
-	velocity := baseVelocity + rand.Float64()*1.5
+	velocity := baseDropVelocity + rand.Float64()*1.5
 
 	direction := Vector{
 		X: target.X - pos.X,
@@ -66,7 +51,7 @@ func NewDroplet(baseVelocity float64) *Droplet {
 	sprite := assets.DropletSprite
 
 	r := &Droplet{
-		position:      pos,
+		position:      spawnPos,
 		movement:      movement,
 		rotationSpeed: rotationSpeedMin + rand.Float64()*(rotationSpeedMax-rotationSpeedMin),
 		sprite:        sprite,
@@ -81,28 +66,13 @@ func (d *Droplet) Update() {
 }
 
 func (d *Droplet) Draw(screen *ebiten.Image) {
-	// op := &ebiten.DrawImageOptions{}
-	// // op.GeoM.Rotate(d.rotation)
-	// op.GeoM.Translate(d.position.X, d.position.Y)
-	// screen.DrawImage(d.sprite, op)
-
-	bounds := d.sprite.Bounds()
-	halfW := float64(bounds.Dx()) / 2
-	halfH := float64(bounds.Dy()) / 2
-
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(-halfW, -halfH)
-	op.GeoM.Rotate(d.rotation)
-	op.GeoM.Translate(halfW, halfH)
-
 	op.GeoM.Translate(d.position.X, d.position.Y)
-
 	screen.DrawImage(d.sprite, op)
 }
 
 func (d *Droplet) Collider() Rect {
 	bounds := d.sprite.Bounds()
-
 	return NewRect(
 		d.position.X,
 		d.position.Y,
