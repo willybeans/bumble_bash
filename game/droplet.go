@@ -14,6 +14,10 @@ import (
 // 	rotationSpeedMax = 0.02
 // )
 
+const (
+// hitCooldown = time.Millisecond * 500
+)
+
 type Droplet struct {
 	position      Vector
 	rotation      float64
@@ -45,10 +49,6 @@ func NewDroplet(baseVelocity float64) *Droplet {
 		X: target.X + math.Cos(angle)*radius,
 		Y: target.Y + math.Sin(angle)*radius,
 	}
-	// pos := Vector{
-	// 	X: target.X + 100,
-	// 	Y: target.Y,
-	// }
 
 	velocity := baseVelocity + rand.Float64()*1.5
 

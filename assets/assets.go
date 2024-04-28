@@ -19,6 +19,13 @@ var PlayerHitSprite = mustLoadImage("Bee_Hit.png")
 
 var FlowerSprite = mustLoadImage("Red_Daisy.png")
 
+// var PollenSprite0 = mustLoadImage("pollen.png")
+// var PollenSprite1 = mustLoadImage("pollen1.png")
+// var PollenSprite2 = mustLoadImage("pollen2.png")
+// var PollenSprite3 = mustLoadImage("pollen3.png")
+// var PollenSprite4 = mustLoadImage("pollen4.png")
+var PollenSprites = mustLoadImages("pollen/*.png")
+
 var DropletSprite = mustLoadImage("raindroplet.png")
 var DropletBrokenSprite = mustLoadImage("droplet_broken.png")
 

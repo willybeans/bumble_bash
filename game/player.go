@@ -1,7 +1,6 @@
 package game
 
 import (
-	"image/color"
 	"math"
 	"time"
 
@@ -21,10 +20,13 @@ type Player struct {
 	game     *Game
 	position Vector
 	// rotation float64
-	sprite      *ebiten.Image
-	hitSprite   *ebiten.Image
-	hitCooldown *Timer
-	isHit       bool
+	oldPollenCount int
+	Pollens        []*Pollen
+	sprite         *ebiten.Image
+	hitSprite      *ebiten.Image
+	hitCooldown    *Timer
+	isHit          bool
+	hitCoords      Vector
 }
 
 func NewPlayer(game *Game) *Player {
@@ -41,17 +43,17 @@ func NewPlayer(game *Game) *Player {
 	}
 
 	return &Player{
-		game:     game,
-		position: pos,
-		// rotation: 0,
-		sprite:      sprite,
-		hitSprite:   hitSprite,
-		hitCooldown: NewTimer(hitCooldown),
+		game:           game,
+		position:       pos,
+		oldPollenCount: 0,
+		sprite:         sprite,
+		hitSprite:      hitSprite,
+		hitCooldown:    NewTimer(hitCooldown),
 	}
 }
 
 func (p *Player) Update() {
-	playerSpeed := 5.0
+	playerSpeed := 6.0
 	var delta Vector
 
 	if ebiten.IsKeyPressed(ebiten.KeyDown) {
@@ -93,16 +95,18 @@ func (p *Player) Draw(screen *ebiten.Image) {
 		playerSprite = p.hitSprite
 	}
 
-	pollen := ebiten.NewImage(10, 10)
-	pollen.Fill(color.White)
-
-	// test = screen.SubImage(pollen.Bounds())
-
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(p.position.X, p.position.Y)
-
-	// playerSprite.WritePixels(test)
 	screen.DrawImage(playerSprite, op)
+
+	for _, pollen := range p.Pollens {
+		opc := &ebiten.DrawImageOptions{}
+		opc.GeoM.Translate(p.position.X, p.position.Y)
+		opc.GeoM.Translate(pollen.pollenPlacement.X, pollen.pollenPlacement.Y)
+		opc.GeoM.Translate(pollen.position.X, pollen.position.Y)
+		screen.DrawImage(pollen.sprite, opc)
+	}
+
 }
 
 func (p *Player) Collider() Rect {

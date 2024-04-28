@@ -91,20 +91,39 @@ func (g *Game) Update() error {
 		if f.Collider().Intersects(g.player.Collider()) {
 			g.flowers = append(g.flowers[:i], g.flowers[i+1:]...)
 			g.score++
+			p := NewPollen(g.baseVelocity, g.player.sprite)
+			g.player.Pollens = append(g.player.Pollens, p)
+
 		}
 	}
 
 	for i, d := range g.droplets {
 		if d.Collider().Intersects(g.player.Collider()) {
+			// fmt.Println("inside if drop", d.Collider().X, d.Collider().Y)
+			// fmt.Println("inside if player", g.player.Collider().X, g.player.Collider().Y)
+			// fmt.Println("inside if player position", g.player.position.X, g.player.position.Y)
+
 			g.droplets = append(g.droplets[:i], g.droplets[i+1:]...)
-			fmt.Println(g.player.position)
+
 			g.player.isHit = true
+			g.player.hitCoords = Vector{
+				X: d.Collider().X,
+				Y: d.Collider().Y,
+			}
 
 			if g.score > 0 {
 				fmt.Println(g.player.position.X, g.player.position.Y, g.score)
-				// g.player.sprite.WritePixels(assets.DropletBrokenSprite)
+				if len(g.player.Pollens) > 0 {
+					//needs to be connected with the pollen struct for falling effect
+					var random = randIntRange(0, len(g.player.Pollens))
+					g.player.Pollens = g.player.Pollens[:len(g.player.Pollens)-random]
+				}
+			} else {
+				g.score--
+				// g.Reset()
+				// break
 			}
-			g.score--
+
 		}
 	}
 
@@ -124,6 +143,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	for _, d := range g.droplets {
 		d.Draw(screen)
+	}
+
+	for _, p := range g.player.Pollens {
+		p.Draw(screen, g.player.position)
 	}
 	// g.flower.Draw(screen)
 	g.player.Draw(screen)
