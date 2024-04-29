@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 
 	"github.com/willybeans/bumble_bash/assets"
 )
@@ -78,7 +79,9 @@ func (g *Game) Update() error {
 		g.hoseSpawnTimer.Reset()
 
 		h := NewHose(g)
-		g.hoses = append(g.hoses, h)
+		if len(g.hoses) == 0 {
+			g.hoses = append(g.hoses, h)
+		}
 	}
 
 	for _, f := range g.flowers {
@@ -102,10 +105,10 @@ func (g *Game) Update() error {
 		}
 	}
 
-	for i, d := range g.droplets {
+	for _, d := range g.droplets {
 		if d.Collider().Intersects(g.player.Collider()) {
 			//causes crash for slice out of bounds
-			g.droplets = append(g.droplets[:i], g.droplets[i+1:]...)
+			// g.droplets = append(g.droplets[:i], g.droplets[i+1:]...)
 
 			g.player.isHit = true
 			g.player.hitCoords = Vector{
@@ -186,6 +189,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// 	color.White,
 	// 	false,
 	// )
+
+	for _, h := range g.hoses {
+		vector.StrokeRect(
+			screen,
+			float32(h.position.X),
+			float32(h.position.Y),
+			float32(h.sprite.Bounds().Dx()),
+			float32(h.sprite.Bounds().Dy()),
+			1.0,
+			color.White,
+			false,
+		)
+	}
 
 }
 

@@ -74,38 +74,32 @@ func NewFlower(baseVelocity float64) *Flower {
 	return r
 }
 
-func (r *Flower) Update() {
-	r.position.X += r.movement.X
-	r.position.Y += r.movement.Y
-	r.rotation += r.rotationSpeed
+func (f *Flower) Update() {
+	f.position.X += f.movement.X
+	f.position.Y += f.movement.Y
+	f.rotation += f.rotationSpeed
 }
 
-func (r *Flower) Draw(screen *ebiten.Image) {
-	// op := &ebiten.DrawImageOptions{}
-	// // op.GeoM.Rotate(r.rotation)
-	// op.GeoM.Translate(r.position.X, r.position.Y)
-	// screen.DrawImage(r.sprite, op)
-
-	bounds := r.sprite.Bounds()
+func (f *Flower) Draw(screen *ebiten.Image) {
+	bounds := f.sprite.Bounds()
 	halfW := float64(bounds.Dx()) / 2
 	halfH := float64(bounds.Dy()) / 2
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(-halfW, -halfH)
-	op.GeoM.Rotate(r.rotation)
+	op.GeoM.Rotate(f.rotation)
 	op.GeoM.Translate(halfW, halfH)
+	op.GeoM.Translate(f.position.X, f.position.Y)
 
-	op.GeoM.Translate(r.position.X, r.position.Y)
-
-	screen.DrawImage(r.sprite, op)
+	screen.DrawImage(f.sprite, op)
 }
 
-func (r *Flower) Collider() Rect {
-	bounds := r.sprite.Bounds()
+func (f *Flower) Collider() Rect {
+	bounds := f.sprite.Bounds()
 
 	return NewRect(
-		r.position.X,
-		r.position.Y,
+		f.position.X,
+		f.position.Y,
 		float64(bounds.Dx()),
 		float64(bounds.Dy()),
 	)

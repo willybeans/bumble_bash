@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	shootCooldown      = time.Millisecond * 500
+	shootCooldown      = time.Millisecond * 2000
 	dropletSpawnOffset = 10.0
 )
 
@@ -20,6 +20,7 @@ type Hose struct {
 	rotation      float64
 	hitCoords     Vector
 	shootCooldown *Timer
+	shotCounter   int
 }
 
 func NewHose(game *Game) *Hose {
@@ -35,8 +36,8 @@ func NewHose(game *Game) *Hose {
 	// }
 
 	pos := Vector{
-		X: screenWidth*.75 - float64(bounds.Dx())/2,
-		Y: screenHeight*.75 - float64(bounds.Dy())/2,
+		X: screenWidth - float64(bounds.Dx()),
+		Y: screenHeight - float64(bounds.Dy()),
 	}
 
 	return &Hose{
@@ -44,21 +45,33 @@ func NewHose(game *Game) *Hose {
 		position:      pos,
 		rotation:      0,
 		sprite:        sprite,
+		shotCounter:   1,
 		shootCooldown: NewTimer(shootCooldown)}
 }
 
 func (h *Hose) Update() {
+
 	h.shootCooldown.Update()
 	if h.shootCooldown.IsReady() {
+		h.shotCounter++
 		h.shootCooldown.Reset()
 
 		spawnPos := Vector{
 			X: h.position.X,
-			Y: h.position.Y + 20,
+			Y: h.position.Y + float64(h.sprite.Bounds().Dy()/2),
 		}
 
-		droplet := NewDroplet(spawnPos, h.rotation)
-		h.game.AddDroplet(droplet)
+		for i := 1; i < 6; i++ {
+			h.rotation = float64(i)
+			// fmt.Println("counter", h.shotCounter)
+			// fmt.Println(float64(h.shotCounter % 5))
+			droplet := NewDroplet(spawnPos, h.rotation, h.shotCounter)
+			h.game.AddDroplet(droplet)
+		}
+		if h.shotCounter >= 10 {
+			h.shotCounter = 1
+		}
+
 	}
 }
 
