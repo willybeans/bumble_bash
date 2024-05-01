@@ -3,11 +3,11 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 
 	"github.com/willybeans/bumble_bash/assets"
 )
@@ -28,6 +28,7 @@ const (
 var isHit = false
 
 type Game struct {
+	mut               sync.Mutex
 	player            *Player
 	flowerSpawnTimer  *Timer
 	hoseSpawnTimer    *Timer
@@ -97,23 +98,41 @@ func (g *Game) Update() error {
 	}
 
 	for i, f := range g.flowers {
-		if f.Collider().Intersects(g.player.Collider()) {
-			g.flowers = append(g.flowers[:i], g.flowers[i+1:]...)
-			g.score++
-			p := NewPollen(g.baseVelocity, g.player.sprite)
-			g.player.Pollens = append(g.player.Pollens, p)
+		isPlayerCollision := f.Collider().Intersects(g.player.Collider())
+
+		if f.position.X < 0 ||
+			f.position.Y < 0 ||
+			f.position.X > screenWidth ||
+			f.position.Y > screenHeight ||
+			isPlayerCollision {
+
+			g.flowers = RemoveIndex(g.flowers, i, f)
+
+			if isPlayerCollision {
+				g.score++
+				p := NewPollen(g.baseVelocity, g.player.sprite)
+				g.player.Pollens = append(g.player.Pollens, p)
+			}
 		}
+
 	}
 
-	for _, d := range g.droplets {
-		if d.Collider().Intersects(g.player.Collider()) {
-			//causes crash for slice out of bounds
-			// g.droplets = append(g.droplets[:i], g.droplets[i+1:]...)
+	for i, d := range g.droplets {
+		isPlayerCollision := d.Collider().Intersects(g.player.Collider())
+		if d.position.X < 0 ||
+			d.position.Y < 0 ||
+			d.position.X > screenWidth ||
+			d.position.Y > screenHeight ||
+			isPlayerCollision {
 
-			g.player.isHit = true
-			g.player.hitCoords = Vector{
-				X: d.Collider().X,
-				Y: d.Collider().Y,
+			g.droplets = RemoveIndex(g.droplets, i, d)
+
+			if isPlayerCollision {
+				g.player.isHit = true
+				g.player.hitCoords = Vector{
+					X: d.Collider().X,
+					Y: d.Collider().Y,
+				}
 			}
 
 			if g.score > 0 {
@@ -190,18 +209,18 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// 	false,
 	// )
 
-	for _, h := range g.hoses {
-		vector.StrokeRect(
-			screen,
-			float32(h.position.X),
-			float32(h.position.Y),
-			float32(h.sprite.Bounds().Dx()),
-			float32(h.sprite.Bounds().Dy()),
-			1.0,
-			color.White,
-			false,
-		)
-	}
+	// for _, h := range g.hoses {
+	// 	vector.StrokeRect(
+	// 		screen,
+	// 		float32(h.position.X),
+	// 		float32(h.position.Y),
+	// 		float32(h.sprite.Bounds().Dx()),
+	// 		float32(h.sprite.Bounds().Dy()),
+	// 		1.0,
+	// 		color.White,
+	// 		false,
+	// 	)
+	// }
 
 }
 
