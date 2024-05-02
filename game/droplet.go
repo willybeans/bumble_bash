@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	baseDropVelocity   = 5
+	baseDropVelocity   = 3
 	dropSpeedPerSecond = 350.0
 )
 

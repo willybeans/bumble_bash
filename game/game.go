@@ -17,7 +17,7 @@ const (
 	screenHeight = 600
 
 	flowerSpawnTime  = 1 * time.Second
-	hoseSpawnTime    = 10 * time.Second
+	hoseSpawnTime    = 1 * time.Second
 	dropletSpawnTime = 2 * time.Second
 
 	baseFlowerVelocity  = 0.25
@@ -48,7 +48,7 @@ func NewGame() *Game {
 	g := &Game{
 		dropletSpawnTimer: NewTimer(dropletSpawnTime),
 		flowerSpawnTimer:  NewTimer(flowerSpawnTime),
-		hoseSpawnTimer:    NewTimer(flowerSpawnTime),
+		hoseSpawnTimer:    NewTimer(hoseSpawnTime),
 		baseVelocity:      baseFlowerVelocity,
 		velocityTimer:     NewTimer(flowerSpeedUpTime),
 	}
@@ -79,8 +79,8 @@ func (g *Game) Update() error {
 	if g.hoseSpawnTimer.IsReady() {
 		g.hoseSpawnTimer.Reset()
 
-		h := NewHose(g)
-		if len(g.hoses) == 0 {
+		if len(g.hoses) < 2 {
+			h := NewHose(g, len(g.hoses))
 			g.hoses = append(g.hoses, h)
 		}
 	}
@@ -133,19 +133,13 @@ func (g *Game) Update() error {
 					X: d.Collider().X,
 					Y: d.Collider().Y,
 				}
-			}
+				g.score--
 
-			if g.score > 0 {
-				// fmt.Println(g.player.position.X, g.player.position.Y, g.score)
 				if len(g.player.Pollens) > 0 {
 					//needs to be connected with the pollen struct for falling effect
 					// var random = randIntRange(0, len(g.player.Pollens))
 					// g.player.Pollens = g.player.Pollens[:len(g.player.Pollens)-random]
 				}
-			} else {
-				g.score--
-				// g.Reset()
-				// break
 			}
 
 		}

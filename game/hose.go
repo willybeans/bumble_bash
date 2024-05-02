@@ -14,6 +14,7 @@ const (
 )
 
 type Hose struct {
+	id            int
 	game          *Game
 	position      Vector
 	sprite        *ebiten.Image
@@ -23,24 +24,31 @@ type Hose struct {
 	shotCounter   int
 }
 
-func NewHose(game *Game) *Hose {
+func NewHose(game *Game, hoseCount int) *Hose {
 	sprite := assets.HoseSprite
 
 	bounds := sprite.Bounds()
-	// halfW := float64(bounds.Dx()) / 2
-	// halfH := float64(bounds.Dy()) / 2
 
-	// pos := Vector{
-	// 	X: screenWidth/2 - halfW,
-	// 	Y: screenHeight/2 - halfH,
-	// }
-
-	pos := Vector{
-		X: screenWidth - float64(bounds.Dx()),
-		Y: screenHeight - float64(bounds.Dy()),
+	var pos Vector
+	if hoseCount%2 == 0 {
+		pos = Vector{
+			X: 0 + float64(bounds.Dx()/10),
+			Y: screenHeight - float64(bounds.Dy()),
+		}
+	} else {
+		pos = Vector{
+			X: screenWidth - float64(bounds.Dx()),
+			Y: screenHeight - float64(bounds.Dy()),
+		}
 	}
 
+	// pos := Vector{
+	// 	X: screenWidth - float64(bounds.Dx()),
+	// 	Y: screenHeight - float64(bounds.Dy()),
+	// }
+
 	return &Hose{
+		id:            hoseCount,
 		game:          game,
 		position:      pos,
 		rotation:      0,
