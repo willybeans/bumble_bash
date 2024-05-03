@@ -21,6 +21,7 @@ var FlowerSprite = mustLoadImage("Red_Daisy.png")
 var HoseSprite = mustLoadImage("WateringCan.png")
 
 var PollenSprites = mustLoadImages("pollen/*.png")
+var ApiarySprite = mustLoadImage("apiary10.png")
 
 var DropletSprite = mustLoadImage("raindroplet.png")
 var DropletBrokenSprite = mustLoadImage("droplet_broken.png")

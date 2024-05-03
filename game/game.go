@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"image/color"
-	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -28,15 +27,16 @@ const (
 var isHit = false
 
 type Game struct {
-	mut               sync.Mutex
-	player            *Player
-	flowerSpawnTimer  *Timer
-	hoseSpawnTimer    *Timer
-	dropletSpawnTimer *Timer
-
+	player   *Player
+	apiary   *Apiary
 	flowers  []*Flower
 	hoses    []*Hose
 	droplets []*Droplet
+	pollens  []*Pollen
+
+	flowerSpawnTimer  *Timer
+	hoseSpawnTimer    *Timer
+	dropletSpawnTimer *Timer
 
 	score int
 
@@ -54,6 +54,7 @@ func NewGame() *Game {
 	}
 
 	g.player = NewPlayer(g)
+	g.apiary = NewApiary(g)
 
 	return g
 }
@@ -66,6 +67,15 @@ func (g *Game) Update() error {
 	}
 
 	g.player.Update()
+	if g.apiary.didSpawn { // move the timer to here for the spawning
+	}
+	g.apiary.Update()
+
+	if g.apiary.Collider().Intersects(g.player.Collider()) {
+		score := len(g.player.Pollens)
+		g.player.Pollens = nil
+		g.score += score
+	}
 
 	g.flowerSpawnTimer.Update()
 	if g.flowerSpawnTimer.IsReady() {
@@ -79,7 +89,7 @@ func (g *Game) Update() error {
 	if g.hoseSpawnTimer.IsReady() {
 		g.hoseSpawnTimer.Reset()
 
-		if len(g.hoses) < 2 {
+		if len(g.hoses) < 1 {
 			h := NewHose(g, len(g.hoses))
 			g.hoses = append(g.hoses, h)
 		}
@@ -91,6 +101,10 @@ func (g *Game) Update() error {
 
 	for _, d := range g.droplets {
 		d.Update()
+	}
+
+	for _, p := range g.pollens {
+		p.Update()
 	}
 
 	for _, h := range g.hoses {
@@ -109,8 +123,7 @@ func (g *Game) Update() error {
 			g.flowers = RemoveIndex(g.flowers, i, f)
 
 			if isPlayerCollision {
-				g.score++
-				p := NewPollen(g.baseVelocity, g.player.sprite)
+				p := NewPollen(g.baseVelocity, g.player.sprite, g.player.position, false)
 				g.player.Pollens = append(g.player.Pollens, p)
 			}
 		}
@@ -133,14 +146,46 @@ func (g *Game) Update() error {
 					X: d.Collider().X,
 					Y: d.Collider().Y,
 				}
-				g.score--
 
 				if len(g.player.Pollens) > 0 {
 					//needs to be connected with the pollen struct for falling effect
 					// var random = randIntRange(0, len(g.player.Pollens))
-					// g.player.Pollens = g.player.Pollens[:len(g.player.Pollens)-random]
+					// test := g.player.Pollens[:len(g.player.Pollens)-1]
+					// fmt.Println("pos: ", test)
+					g.player.Pollens = g.player.Pollens[:len(g.player.Pollens)-1]
+					pollen := NewPollen(g.baseVelocity, g.player.sprite, g.player.position, true)
+					g.pollens = append(g.pollens, pollen)
 				}
 			}
+
+		}
+	}
+
+	for i, p := range g.player.Pollens {
+		if p.position.X < 0 ||
+			p.position.Y < 0 ||
+			p.position.X > screenWidth ||
+			p.position.Y > screenHeight {
+
+			g.player.Pollens = RemoveIndex(g.player.Pollens, i, p)
+
+		}
+	}
+
+	for i, p := range g.pollens {
+		isPlayerCollision := p.Collider().Intersects(g.player.Collider())
+
+		if p.position.X < 0 ||
+			p.position.Y < 0 ||
+			p.position.X > screenWidth ||
+			p.position.Y > screenHeight ||
+			(isPlayerCollision && p.catchable) {
+
+			if isPlayerCollision && p.catchable {
+				pollen := NewPollen(g.baseVelocity, g.player.sprite, g.player.position, false)
+				g.player.Pollens = append(g.player.Pollens, pollen)
+			}
+			g.pollens = RemoveIndex(g.pollens, i, p)
 
 		}
 	}
@@ -151,6 +196,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.player.Draw(screen)
 
+	g.apiary.Draw(screen)
+
 	for _, f := range g.flowers {
 		f.Draw(screen)
 	}
@@ -160,8 +207,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, d := range g.droplets {
 		d.Draw(screen)
 	}
+	for _, p := range g.pollens {
+		p.Draw(screen)
+	}
 	for _, p := range g.player.Pollens {
-		p.Draw(screen, g.player.position)
+		p.Draw(screen)
 	}
 
 	text.Draw(screen, fmt.Sprintf("%06d", g.score), assets.ScoreFont, screenWidth/2-100, 50, color.White)
@@ -198,6 +248,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// 	float32(g.player.position.Y),
 	// 	float32(g.player.sprite.Bounds().Dx()),
 	// 	float32(g.player.sprite.Bounds().Dy()),
+	// 	1.0,
+	// 	color.White,
+	// 	false,
+	// )
+
+	// vector.StrokeRect(
+	// 	screen,
+	// 	float32(g.apiary.position.X),
+	// 	float32(g.apiary.position.Y),
+	// 	float32(g.apiary.sprite.Bounds().Dx()*4),
+	// 	float32(g.apiary.sprite.Bounds().Dy()*4),
 	// 	1.0,
 	// 	color.White,
 	// 	false,

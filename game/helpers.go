@@ -12,7 +12,9 @@ func randIntRange(min, max int) int {
 	return rand.Intn(max-min) + min
 }
 
-type AnyType interface{ Flower | Droplet | Hose }
+type AnyType interface {
+	Flower | Droplet | Hose | Pollen
+}
 
 func RemoveIndex[T AnyType](slc []*T, index int, remove *T) []*T {
 	for idx, v := range slc {

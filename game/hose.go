@@ -54,7 +54,8 @@ func NewHose(game *Game, hoseCount int) *Hose {
 		rotation:      0,
 		sprite:        sprite,
 		shotCounter:   1,
-		shootCooldown: NewTimer(shootCooldown)}
+		shootCooldown: NewTimer(shootCooldown),
+	}
 }
 
 func (h *Hose) Update() {
