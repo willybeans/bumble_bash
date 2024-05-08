@@ -4,22 +4,34 @@ import (
 	"bytes"
 	"fmt"
 	"image/color"
+	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
-	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
-	"github.com/willybeans/bumble_bash/assets"
 	raudio "github.com/willybeans/bumble_bash/audio"
 )
 
+type Mode int
+
 const (
+	ModeTitle Mode = iota
+	ModeGame
+	ModeGameOver
+
 	sampleRate = 48000
 
-	screenWidth  = 800
-	screenHeight = 600
+	screenWidth   = 800
+	screenHeight  = 600
+	tileSize      = 32
+	titleFontSize = fontSize * 1.5
+	fontSize      = 24
+	smallFontSize = fontSize / 2
 
 	flowerSpawnTime  = 1 * time.Second
 	hoseSpawnTime    = 12 * time.Second
@@ -34,9 +46,13 @@ const (
 	bytesPerSample      = 4 // 2 channels * 2 bytes (16 bit)
 )
 
-var isHit = false
+var (
+	isHit            = false
+	arcadeFaceSource *text.GoTextFaceSource
+)
 
 type Game struct {
+	mode     Mode
 	player   *Player
 	apiary   *Apiary
 	flowers  []*Flower
@@ -74,6 +90,12 @@ func NewGame() *Game {
 	g.player = NewPlayer(g)
 	g.apiary = NewApiary(g)
 
+	s, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.PressStart2P_ttf))
+	if err != nil {
+		log.Fatal(err)
+	}
+	arcadeFaceSource = s
+
 	if g.audioContext == nil {
 		g.audioContext = audio.NewContext(sampleRate)
 	}
@@ -106,8 +128,54 @@ func NewGame() *Game {
 
 	return g
 }
+func (g *Game) isKeyJustPressed() bool {
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		return true
+	}
+	return false
+}
 
 func (g *Game) Update() error {
+	switch g.mode {
+	case ModeTitle:
+		if g.isKeyJustPressed() {
+			g.mode = ModeGame
+		}
+	case ModeGame:
+		// g.x16 += 32
+		// g.cameraX += 2
+		// if g.isKeyJustPressed() {
+		// 	g.vy16 = -96
+		// 	if err := g.jumpPlayer.Rewind(); err != nil {
+		// 		return err
+		// 	}
+		// 	g.jumpPlayer.Play()
+		// }
+		// g.y16 += g.vy16
+
+		// // Gravity
+		// g.vy16 += 4
+		// if g.vy16 > 96 {
+		// 	g.vy16 = 96
+		// }
+
+		// if g.hit() {
+		// 	if err := g.hitPlayer.Rewind(); err != nil {
+		// 		return err
+		// 	}
+		// 	g.hitPlayer.Play()
+		// 	g.mode = ModeGameOver
+		// 	g.gameoverCount = 30
+		// }
+	case ModeGameOver:
+		// if g.gameoverCount > 0 {
+		// 	g.gameoverCount--
+		// }
+		// if g.gameoverCount == 0 && g.isKeyJustPressed() {
+		// 	g.init()
+		// 	g.mode = ModeTitle
+		// }
+	}
 	g.velocityTimer.Update()
 	if g.velocityTimer.IsReady() {
 		g.velocityTimer.Reset()
@@ -272,88 +340,146 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.player.Draw(screen)
+	screen.Fill(color.RGBA{0x80, 0xa0, 0xc0, 0xff})
 
-	g.apiary.Draw(screen)
-
-	for _, f := range g.flowers {
-		f.Draw(screen)
-	}
-	for _, h := range g.hoses {
-		h.Draw(screen)
-	}
-	for _, d := range g.droplets {
-		d.Draw(screen)
-	}
-	for _, p := range g.pollens {
-		p.Draw(screen)
-	}
-	for _, p := range g.player.Pollens {
-		p.Draw(screen)
+	var titleTexts string
+	var texts string
+	switch g.mode {
+	case ModeTitle:
+		titleTexts = "FLAPPY GOPHER"
+		texts = "\n\n\n\n\n\nPRESS SPACE KEY\n\nOR A/B BUTTON\n\nOR TOUCH SCREEN"
+	case ModeGameOver:
+		texts = "\nGAME OVER!"
 	}
 
-	text.Draw(screen, fmt.Sprintf("%06d", g.score), assets.ScoreFont, screenWidth/2-100, 50, color.White)
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(screenWidth/2, 3*titleFontSize)
+	op.ColorScale.ScaleWithColor(color.White)
+	op.LineSpacing = titleFontSize
+	op.PrimaryAlign = text.AlignCenter
+	text.Draw(screen, titleTexts, &text.GoTextFace{
+		Source: arcadeFaceSource,
+		Size:   titleFontSize,
+	}, op)
 
-	// for _, f := range g.flowers {
-	// 	vector.StrokeRect(
-	// 		screen,
-	// 		float32(f.position.X),
-	// 		float32(f.position.Y),
-	// 		float32(f.sprite.Bounds().Dx()),
-	// 		float32(f.sprite.Bounds().Dy()),
-	// 		1.0,
-	// 		color.White,
-	// 		false,
-	// 	)
-	// }
+	op = &text.DrawOptions{}
+	op.GeoM.Translate(screenWidth/2, 3*titleFontSize)
+	op.ColorScale.ScaleWithColor(color.White)
+	op.LineSpacing = fontSize
+	op.PrimaryAlign = text.AlignCenter
+	text.Draw(screen, texts, &text.GoTextFace{
+		Source: arcadeFaceSource,
+		Size:   fontSize,
+	}, op)
 
-	// for _, d := range g.droplets {
-	// 	vector.StrokeRect(
-	// 		screen,
-	// 		float32(d.position.X),
-	// 		float32(d.position.Y),
-	// 		float32(d.sprite.Bounds().Dx()),
-	// 		float32(d.sprite.Bounds().Dy()),
-	// 		1.0,
-	// 		color.White,
-	// 		false,
-	// 	)
-	// }
+	if g.mode == ModeTitle {
+		const msg = "Go Gopher by Renee French is\nlicenced under CC BY 3.0."
 
-	// vector.StrokeRect(
-	// 	screen,
-	// 	float32(g.player.position.X),
-	// 	float32(g.player.position.Y),
-	// 	float32(g.player.sprite.Bounds().Dx()),
-	// 	float32(g.player.sprite.Bounds().Dy()),
-	// 	1.0,
-	// 	color.White,
-	// 	false,
-	// )
+		op := &text.DrawOptions{}
+		op.GeoM.Translate(screenWidth/2, screenHeight-smallFontSize/2)
+		op.ColorScale.ScaleWithColor(color.White)
+		op.LineSpacing = smallFontSize
+		op.PrimaryAlign = text.AlignCenter
+		op.SecondaryAlign = text.AlignEnd
+		text.Draw(screen, msg, &text.GoTextFace{
+			Source: arcadeFaceSource,
+			Size:   smallFontSize,
+		}, op)
+	}
 
-	// vector.StrokeRect(
-	// 	screen,
-	// 	float32(g.apiary.position.X),
-	// 	float32(g.apiary.position.Y),
-	// 	float32(g.apiary.sprite.Bounds().Dx()*4),
-	// 	float32(g.apiary.sprite.Bounds().Dy()*4),
-	// 	1.0,
-	// 	color.White,
-	// 	false,
-	// )
+	op = &text.DrawOptions{}
+	op.GeoM.Translate(screenWidth/2, 0)
+	op.ColorScale.ScaleWithColor(color.White)
+	op.LineSpacing = fontSize
+	op.PrimaryAlign = text.AlignCenter
+	text.Draw(screen, fmt.Sprintf("%04d", g.score), &text.GoTextFace{
+		Source: arcadeFaceSource,
+		Size:   fontSize,
+	}, op)
 
-	// for _, h := range g.hoses {
-	// 	vector.StrokeRect(
-	// 		screen,
-	// 		float32(h.position.X),
-	// 		float32(h.position.Y),
-	// 		float32(h.sprite.Bounds().Dx()),
-	// 		float32(h.sprite.Bounds().Dy()),
-	// 		1.0,
-	// 		color.White,
-	// 		false,
-	// 	)
-	// }
+	if g.mode != ModeTitle {
+		g.player.Draw(screen)
+
+		g.apiary.Draw(screen)
+
+		for _, f := range g.flowers {
+			f.Draw(screen)
+		}
+		for _, h := range g.hoses {
+			h.Draw(screen)
+		}
+		for _, d := range g.droplets {
+			d.Draw(screen)
+		}
+		for _, p := range g.pollens {
+			p.Draw(screen)
+		}
+		for _, p := range g.player.Pollens {
+			p.Draw(screen)
+		}
+
+		// for _, f := range g.flowers {
+		// 	vector.StrokeRect(
+		// 		screen,
+		// 		float32(f.position.X),
+		// 		float32(f.position.Y),
+		// 		float32(f.sprite.Bounds().Dx()),
+		// 		float32(f.sprite.Bounds().Dy()),
+		// 		1.0,
+		// 		color.White,
+		// 		false,
+		// 	)
+		// }
+
+		// for _, d := range g.droplets {
+		// 	vector.StrokeRect(
+		// 		screen,
+		// 		float32(d.position.X),
+		// 		float32(d.position.Y),
+		// 		float32(d.sprite.Bounds().Dx()),
+		// 		float32(d.sprite.Bounds().Dy()),
+		// 		1.0,
+		// 		color.White,
+		// 		false,
+		// 	)
+		// }
+
+		// vector.StrokeRect(
+		// 	screen,
+		// 	float32(g.player.position.X),
+		// 	float32(g.player.position.Y),
+		// 	float32(g.player.sprite.Bounds().Dx()),
+		// 	float32(g.player.sprite.Bounds().Dy()),
+		// 	1.0,
+		// 	color.White,
+		// 	false,
+		// )
+
+		// vector.StrokeRect(
+		// 	screen,
+		// 	float32(g.apiary.position.X),
+		// 	float32(g.apiary.position.Y),
+		// 	float32(g.apiary.sprite.Bounds().Dx()*4),
+		// 	float32(g.apiary.sprite.Bounds().Dy()*4),
+		// 	1.0,
+		// 	color.White,
+		// 	false,
+		// )
+
+		// for _, h := range g.hoses {
+		// 	vector.StrokeRect(
+		// 		screen,
+		// 		float32(h.position.X),
+		// 		float32(h.position.Y),
+		// 		float32(h.sprite.Bounds().Dx()),
+		// 		float32(h.sprite.Bounds().Dy()),
+		// 		1.0,
+		// 		color.White,
+		// 		false,
+		// 	)
+		// }
+
+	}
 
 }
 
