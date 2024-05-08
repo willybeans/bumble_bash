@@ -55,9 +55,11 @@ type Game struct {
 
 	audioContext *audio.Context
 	audioPlayer  *audio.Player
-	// jumpPlayer   *audio.Player
-	hitPlayer   []*audio.Player
-	songStarted bool
+	hitPlayer    []*audio.Player
+	hitPollen    *audio.Player
+	hitApiary    *audio.Player
+	hitFlower    *audio.Player
+	songStarted  bool
 }
 
 func NewGame() *Game {
@@ -79,11 +81,28 @@ func NewGame() *Game {
 	for i := 0; i < len(raudio.Ouchies); i++ {
 		hitD, err := wav.DecodeWithoutResampling(bytes.NewReader(raudio.Ouchies[i]))
 		check(err)
-
 		hitPlayer, err := g.audioContext.NewPlayer(hitD)
+		hitPlayer.SetVolume(0.5)
 		g.hitPlayer = append(g.hitPlayer, hitPlayer)
 		check(err)
 	}
+
+	wowS, err := wav.DecodeWithoutResampling(bytes.NewReader(raudio.Wow_wav))
+	check(err)
+	g.hitApiary, err = g.audioContext.NewPlayer(wowS)
+	g.hitApiary.SetVolume(1)
+	check(err)
+
+	NomS, err := wav.DecodeWithoutResampling(bytes.NewReader(raudio.Nom_wav))
+	check(err)
+	g.hitFlower, err = g.audioContext.NewPlayer(NomS)
+	g.hitFlower.SetVolume(0.1)
+	check(err)
+
+	GrabS, err := wav.DecodeWithoutResampling(bytes.NewReader(raudio.Grab_wav))
+	check(err)
+	g.hitPollen, err = g.audioContext.NewPlayer(GrabS)
+	check(err)
 
 	return g
 }
@@ -101,9 +120,13 @@ func (g *Game) Update() error {
 	g.apiary.Update()
 
 	if g.apiary.Collider().Intersects(g.player.Collider()) {
-		score := len(g.player.Pollens)
-		g.player.Pollens = nil
-		g.score += score
+		if len(g.player.Pollens) > 0 {
+			score := len(g.player.Pollens)
+			g.player.Pollens = nil
+			g.score += score
+			playSound(g.hitApiary)
+		}
+
 	}
 
 	g.flowerSpawnTimer.Update()
@@ -154,6 +177,8 @@ func (g *Game) Update() error {
 			if isPlayerCollision {
 				p := NewPollen(g.baseVelocity, g.player.sprite, g.player.position, false)
 				g.player.Pollens = append(g.player.Pollens, p)
+				playSound(g.hitFlower)
+
 			}
 		}
 
@@ -177,33 +202,9 @@ func (g *Game) Update() error {
 				}
 
 				randomOuch := randIntRange(0, len(raudio.Ouchies))
-
-				fmt.Println(randomOuch)
-				play := func() {
-					if g.hitPlayer[randomOuch].IsPlaying() {
-						return
-					} else {
-						g.hitPlayer[randomOuch].Rewind()
-						g.hitPlayer[randomOuch].Play()
-					}
-				}
-
-				play()
-				// fmt.Println("out test ", g.hitPlayer.Volume())
-				// if g.audioContext.IsReady() {
-				// 	// if err := g.hitPlayer.Rewind(); err != nil {
-				// 	// 	return err
-				// 	// }
-				// 	fmt.Println(" in test", g.hitPlayer.Volume())
-				// 	g.hitPlayer.Volume()
-				// g.hitPlayer.Play()
-				// }
+				playSound(g.hitPlayer[randomOuch])
 
 				if len(g.player.Pollens) > 0 {
-					//needs to be connected with the pollen struct for falling effect
-					// var random = randIntRange(0, len(g.player.Pollens))
-					// test := g.player.Pollens[:len(g.player.Pollens)-1]
-					// fmt.Println("pos: ", test)
 					g.player.Pollens = g.player.Pollens[:len(g.player.Pollens)-1]
 					pollen := NewPollen(g.baseVelocity, g.player.sprite, g.player.position, true)
 					g.pollens = append(g.pollens, pollen)
@@ -236,6 +237,7 @@ func (g *Game) Update() error {
 			if isPlayerCollision && p.catchable {
 				pollen := NewPollen(g.baseVelocity, g.player.sprite, g.player.position, false)
 				g.player.Pollens = append(g.player.Pollens, pollen)
+				playSound(g.hitPollen)
 			}
 			g.pollens = RemoveIndex(g.pollens, i, p)
 
@@ -261,6 +263,7 @@ func (g *Game) Update() error {
 		}
 
 		// Play the infinite-length stream. This never ends.
+		g.audioPlayer.SetVolume(0.1)
 		g.audioPlayer.Play()
 		g.songStarted = true
 	}

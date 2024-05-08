@@ -3,6 +3,8 @@ package game
 import (
 	"log"
 	"math/rand"
+
+	"github.com/hajimehoshi/ebiten/v2/audio"
 )
 
 func randFloatRange(min, max float64) float64 {
@@ -24,6 +26,15 @@ func RemoveIndex[T AnyType](slc []*T, index int, remove *T) []*T {
 		}
 	}
 	return slc
+}
+
+func playSound(sound *audio.Player) {
+	if sound.IsPlaying() {
+		return
+	} else {
+		sound.Rewind()
+		sound.Play()
+	}
 }
 
 func check(err error) {

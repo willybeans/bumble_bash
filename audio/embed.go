@@ -17,6 +17,15 @@ var (
 	//go:embed ouch2.wav
 	Ouch3_wav []byte
 
+	//go:embed nom.wav
+	Nom_wav []byte
+
+	//go:embed wow.wav
+	Wow_wav []byte
+
+	//go:embed grab.wav
+	Grab_wav []byte
+
 	//go:embed stayup.wav
 	Stayup_wav []byte
 
