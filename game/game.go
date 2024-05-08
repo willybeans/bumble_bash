@@ -22,7 +22,7 @@ const (
 	screenHeight = 600
 
 	flowerSpawnTime  = 1 * time.Second
-	hoseSpawnTime    = 1 * time.Second
+	hoseSpawnTime    = 12 * time.Second
 	dropletSpawnTime = 2 * time.Second
 
 	baseFlowerVelocity  = 0.25
@@ -141,7 +141,7 @@ func (g *Game) Update() error {
 	if g.hoseSpawnTimer.IsReady() {
 		g.hoseSpawnTimer.Reset()
 
-		if len(g.hoses) < 1 {
+		if len(g.hoses) < 2 {
 			h := NewHose(g, len(g.hoses))
 			g.hoses = append(g.hoses, h)
 		}
