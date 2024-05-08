@@ -1,17 +1,23 @@
 package game
 
 import (
+	"bytes"
 	"fmt"
 	"image/color"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/text"
 
 	"github.com/willybeans/bumble_bash/assets"
+	raudio "github.com/willybeans/bumble_bash/audio"
 )
 
 const (
+	sampleRate = 48000
+
 	screenWidth  = 800
 	screenHeight = 600
 
@@ -22,6 +28,10 @@ const (
 	baseFlowerVelocity  = 0.25
 	flowerSpeedUpAmount = 0.1
 	flowerSpeedUpTime   = 5 * time.Second
+
+	introLengthInSecond = 50
+	loopLengthInSecond  = 4
+	bytesPerSample      = 4 // 2 channels * 2 bytes (16 bit)
 )
 
 var isHit = false
@@ -42,6 +52,12 @@ type Game struct {
 
 	baseVelocity  float64
 	velocityTimer *Timer
+
+	audioContext *audio.Context
+	audioPlayer  *audio.Player
+	// jumpPlayer   *audio.Player
+	hitPlayer   []*audio.Player
+	songStarted bool
 }
 
 func NewGame() *Game {
@@ -55,6 +71,19 @@ func NewGame() *Game {
 
 	g.player = NewPlayer(g)
 	g.apiary = NewApiary(g)
+
+	if g.audioContext == nil {
+		g.audioContext = audio.NewContext(sampleRate)
+	}
+
+	for i := 0; i < len(raudio.Ouchies); i++ {
+		hitD, err := wav.DecodeWithoutResampling(bytes.NewReader(raudio.Ouchies[i]))
+		check(err)
+
+		hitPlayer, err := g.audioContext.NewPlayer(hitD)
+		g.hitPlayer = append(g.hitPlayer, hitPlayer)
+		check(err)
+	}
 
 	return g
 }
@@ -147,6 +176,29 @@ func (g *Game) Update() error {
 					Y: d.Collider().Y,
 				}
 
+				randomOuch := randIntRange(0, len(raudio.Ouchies))
+
+				fmt.Println(randomOuch)
+				play := func() {
+					if g.hitPlayer[randomOuch].IsPlaying() {
+						return
+					} else {
+						g.hitPlayer[randomOuch].Rewind()
+						g.hitPlayer[randomOuch].Play()
+					}
+				}
+
+				play()
+				// fmt.Println("out test ", g.hitPlayer.Volume())
+				// if g.audioContext.IsReady() {
+				// 	// if err := g.hitPlayer.Rewind(); err != nil {
+				// 	// 	return err
+				// 	// }
+				// 	fmt.Println(" in test", g.hitPlayer.Volume())
+				// 	g.hitPlayer.Volume()
+				// g.hitPlayer.Play()
+				// }
+
 				if len(g.player.Pollens) > 0 {
 					//needs to be connected with the pollen struct for falling effect
 					// var random = randIntRange(0, len(g.player.Pollens))
@@ -188,6 +240,29 @@ func (g *Game) Update() error {
 			g.pollens = RemoveIndex(g.pollens, i, p)
 
 		}
+	}
+
+	if g.songStarted == false {
+		// g.audioContext = audio.NewContext(sampleRate)
+		// Decode an Ogg file.
+		// oggS is a decoded io.ReadCloser and io.Seeker.
+		oggS, err := wav.DecodeWithoutResampling(bytes.NewReader(raudio.Stayup_wav))
+		if err != nil {
+			return err
+		}
+
+		// Create an infinite loop stream from the decoded bytes.
+		// s is still an io.ReadCloser and io.Seeker.
+		s := audio.NewInfiniteLoop(oggS, introLengthInSecond*bytesPerSample*sampleRate)
+
+		g.audioPlayer, err = g.audioContext.NewPlayer(s)
+		if err != nil {
+			return err
+		}
+
+		// Play the infinite-length stream. This never ends.
+		g.audioPlayer.Play()
+		g.songStarted = true
 	}
 
 	return nil

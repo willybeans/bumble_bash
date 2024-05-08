@@ -1,6 +1,7 @@
 package game
 
 import (
+	"log"
 	"math/rand"
 )
 
@@ -23,4 +24,10 @@ func RemoveIndex[T AnyType](slc []*T, index int, remove *T) []*T {
 		}
 	}
 	return slc
+}
+
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
