@@ -346,8 +346,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	var texts string
 	switch g.mode {
 	case ModeTitle:
-		titleTexts = "FLAPPY GOPHER"
-		texts = "\n\n\n\n\n\nPRESS SPACE KEY\n\nOR A/B BUTTON\n\nOR TOUCH SCREEN"
+		titleTexts = "LET'S GET\n READY TO BUMBLE"
+		texts = "\n\n\n\n\n\nPRESS SPACE KEY\n"
 	case ModeGameOver:
 		texts = "\nGAME OVER!"
 	}
@@ -373,7 +373,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}, op)
 
 	if g.mode == ModeTitle {
-		const msg = "Go Gopher by Renee French is\nlicenced under CC BY 3.0."
+		const msg = "Let's Get Ready To Bumble By Will Wedmedyk is\nlicenced under CC BY 3.0."
 
 		op := &text.DrawOptions{}
 		op.GeoM.Translate(screenWidth/2, screenHeight-smallFontSize/2)
@@ -396,6 +396,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		Source: arcadeFaceSource,
 		Size:   fontSize,
 	}, op)
+
+	// acceleration linear drag -- physics -- motion of linear drag 
+	//
 
 	if g.mode != ModeTitle {
 		g.player.Draw(screen)
