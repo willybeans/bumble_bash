@@ -1,6 +1,7 @@
 body {
   background-image: url("flowers.jpg");
   background-color: #e4fff7;
+  background-size: 100%;
 }
 
 .main-container {
