@@ -41,7 +41,7 @@ const (
 	flowerSpeedUpAmount = 0.1
 	flowerSpeedUpTime   = 5 * time.Second
 
-	introLengthInSecond = 50
+	introLengthInSecond = 76
 	loopLengthInSecond  = 4
 	bytesPerSample      = 4 // 2 channels * 2 bytes (16 bit)
 )
@@ -397,7 +397,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		Size:   fontSize,
 	}, op)
 
-	// acceleration linear drag -- physics -- motion of linear drag 
+	// acceleration linear drag -- physics -- motion of linear drag
 	//
 
 	if g.mode != ModeTitle {
